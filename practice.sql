@@ -1,1 +1,182 @@
-# 우아우아
+/* 
+=============================================
+1번(10문제) : 기본 SELECT & FILTER
+=============================================
+*/
+# 전체 사용자 수를 구하시오.
+SELECT count(user_id)
+FROM users;
+
+# 성별(gender)별 사용자 수를 구하시오.
+SELECT gender, count(gender)
+FROM users
+GROUP BY gender;
+
+# 2023년에 가입한 사용자 수를 구하시오.
+
+
+# 2023년 3월에 가입한 사용자만 조회하라.
+
+
+# 가장 오래된 가입일(signup_date)과 가장 최근 가입일을 구하라.
+SELECT MAX(signup_date), min(signup_date)
+FROM users;
+
+# session_duration_sec가 2000초 이상인 세션 수를 구하라.
+SELECT count(*)
+FROM sessions
+WHERE session_duration_sec >= 2000;
+
+# 가격(price)이 10만 원 이상인 상품 수를 구하라.
+SELECT count(*)
+FROM products
+WHERE price >= 100000;
+
+# 카테고리(category)별 상품 수를 구하라.
+SELECT category, count(*)
+FROM products
+GROUP BY category;
+
+# orders 테이블에서 주문 날짜가 가장 빠른 10개를 조회하라.
+SELECT *
+FROM orders
+ORDER BY order_date
+LIMIT 10;
+
+# users에서 user_id가 orders에 단 한 번도 등장하지 않은 유저를 찾아라.
+# --- 내가 푼 방법 ---
+SELECT u.user_id
+FROM users u
+LEFT JOIN orders o ON u.user_id = o.user_id
+WHERE o.user_id IS NULL;
+
+# --- JOIN 없이 하는 방법 ---
+SELECT *
+FROM users u
+WHERE NOT EXISTS (
+SELECT 1
+FROM orders o
+WHERE o.user_id = u.user_id)
+
+
+/* 
+=============================================
+2번(10문제) : JOIN 문제 (중급)
+=============================================
+*/
+
+# 주문(order)을 한 적 있는 유저 목록을 조회하라.
+SELECT DISTINCT u.user_id
+FROM users u
+JOIN orders o on u.user_id = o.user_id;
+
+# 사용자별 총 주문 횟수를 구하라.
+
+
+# 사용자별 총 주문 횟수를 내림차순 정렬하라.
+SELECT u.user_id, COUNT(order_id)
+FROM users u
+LEFT JOIN orders o ON u.user_id = o.user_id
+GROUP BY u.user_id
+ORDER BY count(order_id) DESC;
+
+# 성별별(gender) 평균 주문 횟수를 구하라.
+
+
+# 주문이 있는 user_id 중 가장 최근 signup_date를 가진 유저 5명을 조회하라.
+SELECT DISTINCT u.user_id, signup_date
+FROM users u
+JOIN orders o on u.user_id = o.user_id
+ORDER BY signup_date DESC
+LIMIT 5;
+
+# 사용자별 마지막 주문일(last order date)을 구하라.
+SELECT user_id, MAX(order_date)
+FROM orders
+GROUP BY user_id;
+
+# 첫 주문일(first order date)이 가장 빠른 사용자 10명을 조회하라.
+SELECT user_id, min(order_date)
+FROM orders
+GROUP BY user_id
+ORDER BY min(order_date)
+LIMIT 10;
+
+# user_id, signup_date, first_order_date를 함께 조회하라.
+SELECT u.user_id, u.signup_date, min(order_date) AS first_order_date
+FROM users u
+JOIN orders o on u.user_id = o.user_id
+GROUP BY u.user_id
+ORDER BY first_order_date;
+
+# 첫 주문까지 걸린 일수를 계산하여 user_id별로 조회하라.
+SELECT u.user_id, julianday(f.first_order_date) - julianday(u.signup_date) AS date
+FROM users u
+JOIN (
+	SELECT user_id, min(order_date) AS first_order_date
+	FROM orders o
+	GROUP BY user_id) f
+on u.user_id = f.user_id
+GROUP BY u.user_id;
+
+# 성별별 첫 주문까지 걸린 평균 일수를 구하라.
+SELECT gender, AVG(date)
+FROM (
+	SELECT u.user_id, gender, julianday(min(order_date)) - julianday(u.signup_date) AS date
+	FROM users u
+	JOIN orders o on u.user_id = o.user_id
+	GROUP BY u.user_id)
+GROUP BY gender;
+
+
+/* 
+==================================================
+3번(10문제) : DATE / COHORT / FUNNEL 문제 (중상급)
+==================================================
+*/
+
+# 월별(signup_date 기준) 가입자 수를 구하라.
+SELECT strftime('%Y-%m', signup_date) AS months, count(user_id)
+FROM users
+WHERE signup_date IS NOT NULL
+GROUP BY strftime('%Y-%m', signup_date);
+
+# 월별(order_date 기준) 주문 수를 구하라.
+SELECT strftime('%Y-%m', order_date) AS months, count(o.user_id)
+FROM users u
+JOIN orders o on u.user_id = o.user_id
+GROUP BY months;
+
+# 월별 재구매율(월에 2회 이상 구매한 사용자 비율)을 구하라.
+
+
+# cohorts: 가입 월 기준 다음달 주문을 한 사용자 수를 구하라.
+
+
+# cohorts: 가입 후 3개월 이내 재구매한 사용자 비율을 구하라.
+
+
+# “1일차 → 7일차 → 30일차” 리텐션을 계산하는 쿼리를 작성하라.
+
+
+# 세션(session) 시작 날짜 기준, 일별 DAU를 구하라.
+SELECT session_start, count(user_id)
+FROM sessions
+GROUP BY session_start;
+
+# user_id별 평균 세션 길이를 구하라.
+select user_id, AVG(session_duration_sec) AS avg_sec
+FROM sessions
+GROUP BY user_id;
+
+# 성별별 평균 세션 길이 비교
+SELECT gender, AVG(session_duration_sec)
+FROM users u
+LEFT JOIN sessions s ON u.user_id = s.user_id
+GROUP BY gender;
+
+# 가입 후 첫 접속까지 걸린 기간을 계산하라.
+SELECT u.user_id, julianday(MIN(session_start)) - julianday(signup_date)
+FROM users u
+JOIN sessions s on u.user_id = s.user_id
+GROUP BY u.user_id;

@@ -180,3 +180,58 @@ SELECT u.user_id, julianday(MIN(session_start)) - julianday(signup_date)
 FROM users u
 JOIN sessions s on u.user_id = s.user_id
 GROUP BY u.user_id;
+
+/* 
+===================================================
+4번(10문제) : A/B Test, Window Function 문제 (상급)
+===================================================
+*/
+
+# user_id별 주문 순번(row_number)을 계산하라.
+
+
+# user_id별 누적 주문 수(cumulative count)를 나타내라.
+
+
+# user_id별 주문 간격(이전 주문일과의 차이)을 계산하라.
+
+
+# 주문 날짜 기준 상위 10%에 해당하는 주문을 조회하라.
+SELECT order_date, order_id
+FROM orders
+ORDER by order_date DESC
+limit (SELECT count(*)*0.1
+		FROM orders);
+
+# 가격이 가장 높은 상품 TOP 5를 조회하되, 동일 가격이면 product_id 오름차순.
+SELECT product_id, price
+FROM products
+ORDER BY price DESC, product_id
+LIMIT 5;
+
+# 세션 길이가 상위 1% 이상인 사용자들 목록을 조회하라.
+SELECT user_id
+FROM sessions
+GROUP BY user_id
+ORDER BY SUM(session_duration_sec) DESC
+LIMIT (SELECT count(DISTINCT user_id)*0.01
+		FROM sessions)
+	
+
+# 최근 30일 주문 수와 이전 30일 주문 수를 나란히 조회하라.
+
+
+# 카테고리(category)별 상품의 평균 가격을 구하고, 평균 가격이 높은 순서대로 정렬하라.
+SELECT category, AVG(price)
+FROM products
+GROUP BY category
+ORDER BY AVG(price) DESC;
+
+# 카테고리(category)별 상품 개수를 전체 상품 개수 대비 비율로 계산하라.
+sELECT category, COUNT(product_id)* 1.0 / (SELECT count(DISTINCT product_id) FROM products) 
+FROM products
+GROUP BY category
+
+
+# 최근 7일 동안 주문한 사용자 수를 rolling window로 계산하라.
+

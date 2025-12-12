@@ -235,3 +235,36 @@ GROUP BY category
 
 # 최근 7일 동안 주문한 사용자 수를 rolling window로 계산하라.
 
+
+/* 
+===================================================
+5번(10문제) : 종합 분석 문제 (실제 코딩 테스트 급)(상급)
+===================================================
+*/
+
+# Funnel: step1: signup / step2: session / step3: order
+# 위 3단계 전환율을 계산하라.
+
+
+# products 테이블을 기준으로, 카테고리(category)별 상품 수가 전체 상품 수에서 차지하는 비율을 구하라.
+SELECT category,
+		count(DISTINCT product_id) * 1.0 / (SELECT count(DISTINCT product_id) FROM products) AS rate
+FROM products
+GROUP BY category
+
+# orders 테이블을 기준으로, user별 주문 수 비율을 전체 주문 수 대비로 계산하라.
+SELECT user_id,
+		round(count(DISTINCT order_id) *1.0 / (SELECT count(DISTINCT order_id) FROM orders),3) AS rate
+FROM orders
+GROUP BY user_id
+
+# 가입 주차(week)마다 평균 주문 수를 구하라.
+WITH weekly_orders AS (
+	SELECT strftime('%Y-%W', signup_date) AS weekly, u.user_id, COUNT(DISTINCT order_id) AS order_cnt
+	FROM users u
+	LEFT JOIN orders o ON u.user_id = o.user_id
+	GROUP by strftime('%Y-%W', signup_date), u.user_id)
+	
+SELECT weekly, AVG(order_cnt)
+FROM weekly_orders
+group by weekly
